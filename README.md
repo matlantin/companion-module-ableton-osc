@@ -6,7 +6,7 @@ It offers advanced visual feedback, including clip names, colors, and real-time 
 
 ## Prerequisites
 
-- **Ableton Live** (Version 9, 10, 11, or 12)
+- **Ableton Live** (Version 11 or 12)
 - **Bitfocus Companion**
 - The **AbletonOSC** script installed in Ableton Live.
 
@@ -14,20 +14,17 @@ It offers advanced visual feedback, including clip names, colors, and real-time 
 
 For this module to work, you must install the remote script in Ableton Live:
 
-1.  Download the latest version of [AbletonOSC](https://github.com/ideoforms/AbletonOSC) (Code > Download ZIP).
-2.  Extract the `AbletonOSC-master` folder.
-3.  Rename the extracted folder to `AbletonOSC`.
+1. Download the latest version of [AbletonOSC](https://github.com/ideoforms/AbletonOSC) (Code > Download ZIP).
+2. Extract the `AbletonOSC-master` folder.
+3. Rename the extracted folder to `AbletonOSC`.
 4. Install it following the instructions on Ableton's Installing third-party remote scripts doc, by copying the AbletonOSC folder to:
 
-    Windows: \Users\[username]\Documents\Ableton\User Library\Remote Scripts
+    Windows: \Users\[username]\Documents\Ableton\User Library\Remote Scripts  
     macOS: Macintosh HD/Users/[username]/Music/Ableton/User Library/Remote Scripts
 
-    In Preferences > Link / Tempo / MIDI, under the Control Surface dropdown, select the new "AbletonOSC" option. Live should display a message saying "AbletonOSC: Listening for OSC on port 11000"
-
-5.  Launch Ableton Live.
-6.  Go to **Options** > **Preferences** > **Link Tempo MIDI**.
-7.  In the "Control Surface" section, select **AbletonOSC** in one of the dropdown lists.
-8.  Verify that the default ports are 11000 (Input) and 11001 (Output). If you change them, note them down for Companion configuration.
+5. Restart Ableton
+6. In **Preferences** > **Link / Tempo / MIDI**, under the Control Surface dropdown, select the new "AbletonOSC" option. Live should display a message saying "AbletonOSC: Listening for OSC on port 11000"
+7. Verify that the default ports are 11000 (Input) and 11001 (Output). If you change them, note them down for Companion configuration.
 
 ## Configuration in Companion
 
@@ -45,7 +42,7 @@ The module automatically generates presets to help you get started quickly.
 ### Category: Clips
 A grid of buttons (default 8 tracks x 8 scenes) that allows you to:
 *   **Fire a clip** (Press).
-*   **Display the clip name** in real-time.
+*   **Display the clip name** as the button name.
 *   **Display the clip color** as the button background.
 
 ### Category: Tracks
