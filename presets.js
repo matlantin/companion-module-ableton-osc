@@ -116,7 +116,7 @@ module.exports = async function (self) {
 		// Fade In Track
 		presets[`fade_in_track_${t}`] = {
 			type: 'button',
-			category: 'Fades',
+			category: 'Fade Tracks',
 			name: `Fade In Track ${t}`,
 			style: {
 				text: `FADE IN\n$(ableton:track_name_${t})`,
@@ -144,7 +144,7 @@ module.exports = async function (self) {
 		// Fade Out Track
 		presets[`fade_out_track_${t}`] = {
 			type: 'button',
-			category: 'Fades',
+			category: 'Fade Tracks',
 			name: `Fade Out Track ${t}`,
 			style: {
 				text: `FADE OUT\n$(ableton:track_name_${t})`,
@@ -173,7 +173,7 @@ module.exports = async function (self) {
 		for (let s = 1; s <= Math.min(numScenes, 8); s++) {
 			presets[`fade_in_clip_${t}_${s}`] = {
 				type: 'button',
-				category: 'Fades',
+				category: 'Fade Clips',
 				name: `Fade In Clip ${t}-${s}`,
 				style: {
 					text: `FADE IN\n$(ableton:clip_name_${t}_${s})`,
@@ -209,7 +209,7 @@ module.exports = async function (self) {
 
 			presets[`fade_out_clip_${t}_${s}`] = {
 				type: 'button',
-				category: 'Fades',
+				category: 'Fade Clips',
 				name: `Fade Out Clip ${t}-${s}`,
 				style: {
 					text: `FADE OUT\n$(ableton:clip_name_${t}_${s})`,

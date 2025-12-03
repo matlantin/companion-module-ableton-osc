@@ -200,12 +200,13 @@ class AbletonOSCInstance extends InstanceBase {
 				let newValue
 				
 				if (fade.direction === 'out') {
-					// Quadratic fade out
+					// Quadratic fade out (Ease-In: starts slow, speeds up drop)
 					const remaining = 1.0 - progress
 					newValue = fade.startValue * (remaining * remaining)
 				} else {
-					// Quadratic fade in
-					newValue = fade.startValue * (progress * progress)
+					// Quadratic fade in (Ease-Out: starts fast, slows down at end)
+					const p = 1.0 - progress
+					newValue = fade.startValue * (1.0 - p * p)
 				}
 				
 				if (fade.type === 'clip') {
