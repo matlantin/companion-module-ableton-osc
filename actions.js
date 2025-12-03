@@ -135,8 +135,18 @@ module.exports = function (self) {
 
 				const id = `clip_${track}_${clip}`
 				
-				// Initialize fade state
 				if (!self.activeFades) self.activeFades = {}
+
+				// Check for existing fade to interrupt
+				const existingFade = self.activeFades[id]
+				let targetVolume = undefined
+
+				if (existingFade) {
+					if (existingFade.interval) {
+						clearInterval(existingFade.interval)
+					}
+					targetVolume = existingFade.startValue
+				}
 				
 				self.activeFades[id] = {
 					type: 'clip',
@@ -145,7 +155,8 @@ module.exports = function (self) {
 					clip,
 					duration,
 					startTime: Date.now(),
-					state: 'init'
+					state: 'init',
+					targetVolume: targetVolume
 				}
 
 				// Request current gain to start the process
@@ -194,6 +205,17 @@ module.exports = function (self) {
 				const id = `clip_${track}_${clip}`
 				
 				if (!self.activeFades) self.activeFades = {}
+
+				// Check for existing fade to interrupt
+				const existingFade = self.activeFades[id]
+				let targetVolume = undefined
+
+				if (existingFade) {
+					if (existingFade.interval) {
+						clearInterval(existingFade.interval)
+					}
+					targetVolume = existingFade.startValue
+				}
 				
 				self.activeFades[id] = {
 					type: 'clip',
@@ -202,7 +224,8 @@ module.exports = function (self) {
 					clip,
 					duration,
 					startTime: Date.now(),
-					state: 'init'
+					state: 'init',
+					targetVolume: targetVolume
 				}
 
 				self.sendOsc('/live/clip/get/gain', [
@@ -240,6 +263,17 @@ module.exports = function (self) {
 				const id = `track_${track}`
 				
 				if (!self.activeFades) self.activeFades = {}
+
+				// Check for existing fade to interrupt
+				const existingFade = self.activeFades[id]
+				let targetVolume = undefined
+
+				if (existingFade) {
+					if (existingFade.interval) {
+						clearInterval(existingFade.interval)
+					}
+					targetVolume = existingFade.startValue
+				}
 				
 				self.activeFades[id] = {
 					type: 'track',
@@ -247,7 +281,8 @@ module.exports = function (self) {
 					track,
 					duration,
 					startTime: Date.now(),
-					state: 'init'
+					state: 'init',
+					targetVolume: targetVolume
 				}
 
 				self.sendOsc('/live/track/get/volume', [
@@ -284,6 +319,17 @@ module.exports = function (self) {
 				const id = `track_${track}`
 				
 				if (!self.activeFades) self.activeFades = {}
+
+				// Check for existing fade to interrupt
+				const existingFade = self.activeFades[id]
+				let targetVolume = undefined
+
+				if (existingFade) {
+					if (existingFade.interval) {
+						clearInterval(existingFade.interval)
+					}
+					targetVolume = existingFade.startValue
+				}
 				
 				self.activeFades[id] = {
 					type: 'track',
@@ -291,7 +337,8 @@ module.exports = function (self) {
 					track,
 					duration,
 					startTime: Date.now(),
-					state: 'init'
+					state: 'init',
+					targetVolume: targetVolume
 				}
 
 				self.sendOsc('/live/track/get/volume', [

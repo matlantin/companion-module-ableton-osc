@@ -181,15 +181,15 @@ class AbletonOSCInstance extends InstanceBase {
 
 		fade.state = 'fading'
 		
-		// Determine Peak/Target Volume logic for Toggle Fades
+		// Determine Peak/Target Volume logic
 		let peakVolume = startValue
 		
-		if (fade.subtype === 'toggle') {
-			if (fade.targetVolume !== undefined) {
-				// We are interrupting, so we know the target
-				peakVolume = fade.targetVolume
-			} else {
-				// First time or fresh fade
+		if (fade.targetVolume !== undefined) {
+			// We are interrupting, so we know the target
+			peakVolume = fade.targetVolume
+		} else {
+			// Fresh start
+			if (fade.subtype === 'toggle') {
 				if (fade.direction === 'out') {
 					// We are fading out from current level. Current level is the peak.
 					peakVolume = startValue
@@ -204,13 +204,16 @@ class AbletonOSCInstance extends InstanceBase {
 						peakVolume = 0.85
 					}
 				}
+			} else {
+				// Standard Fade
+				// For Fade Out: startValue is the peak (current volume)
+				// For Fade In: startValue is the peak (target volume set by fader)
+				peakVolume = startValue
 			}
-			// For the math to work, we treat 'startValue' in the fade object as the Peak Volume
-			fade.startValue = peakVolume
-		} else {
-			fade.startValue = startValue
 		}
-
+		
+		// For the math to work, we treat 'startValue' in the fade object as the Peak Volume
+		fade.startValue = peakVolume
 		fade.startTime = Date.now()
 
 		// Calculate initial progress if we are interrupting (to avoid jumps)
@@ -219,31 +222,37 @@ class AbletonOSCInstance extends InstanceBase {
 		
 		let initialProgress = 0
 		
-		if (fade.subtype === 'toggle') {
-			// Current Volume from OSC = startValue (argument)
-			// Target Peak = fade.startValue
-			
+		// We calculate progress if:
+		// 1. We are interrupting (targetVolume defined)
+		// 2. OR it's a toggle (which might be resuming/calculating from current state)
+		// 3. OR it's a standard fade where we are not at the target yet (e.g. Fade Out from 0.5 when peak is 0.85)
+		
+		// Special case: Fresh Manual Fade In.
+		// direction='in', targetVolume=undefined, subtype!='toggle'.
+		// In this case, OSC returns the target volume (e.g. 0.85). We want to start at 0.
+		// If we calculate progress, val=peak -> progress=1. It thinks it's finished!
+		// So we skip progress calculation for this specific case.
+		
+		const isFreshManualFadeIn = (fade.direction === 'in' && fade.targetVolume === undefined && fade.subtype !== 'toggle')
+		
+		if (!isFreshManualFadeIn && fade.startValue > 0.001) {
 			if (fade.direction === 'out') {
 				// Curve: val = peak * (remaining * remaining)
 				// val / peak = remaining^2
 				// remaining = sqrt(val / peak)
 				// progress = 1 - remaining
-				if (fade.startValue > 0.001) {
-					const ratio = Math.max(0, Math.min(1, startValue / fade.startValue))
-					const remaining = Math.sqrt(ratio)
-					initialProgress = 1.0 - remaining
-				}
+				const ratio = Math.max(0, Math.min(1, startValue / fade.startValue))
+				const remaining = Math.sqrt(ratio)
+				initialProgress = 1.0 - remaining
 			} else {
 				// Curve: val = peak * (1 - p*p) where p = 1 - progress
 				// val / peak = 1 - p*p
 				// p*p = 1 - (val / peak)
 				// p = sqrt(1 - ratio)
 				// progress = 1 - p
-				if (fade.startValue > 0.001) {
-					const ratio = Math.max(0, Math.min(1, startValue / fade.startValue))
-					const p = Math.sqrt(1.0 - ratio)
-					initialProgress = 1.0 - p
-				}
+				const ratio = Math.max(0, Math.min(1, startValue / fade.startValue))
+				const p = Math.sqrt(1.0 - ratio)
+				initialProgress = 1.0 - p
 			}
 			
 			// Adjust startTime to fake the elapsed time
@@ -264,7 +273,8 @@ class AbletonOSCInstance extends InstanceBase {
 				])
 			} else if (fade.type === 'track') {
 				// Only force to 0 if NOT a toggle (standard behavior) or if we are starting from scratch
-				if (fade.subtype !== 'toggle') {
+				// AND if we are NOT interrupting.
+				if (fade.subtype !== 'toggle' && fade.targetVolume === undefined) {
 					this.sendOsc('/live/track/set/volume', [
 						{ type: 'i', value: fade.track },
 						{ type: 'f', value: 0.0 }
