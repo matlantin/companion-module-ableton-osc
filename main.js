@@ -34,7 +34,27 @@ class AbletonOSCInstance extends InstanceBase {
 
 
 	async destroy() {
+		// Stop all active fades
+		for (const id in this.activeFades) {
+			if (this.activeFades[id].interval) {
+				clearInterval(this.activeFades[id].interval)
+			}
+		}
+		this.activeFades = {}
+
+		if (this.fetchTimeout) {
+			clearTimeout(this.fetchTimeout)
+			this.fetchTimeout = null
+		}
+
 		if (this.oscPort) {
+			try {
+				for (let t = 0; t < this.numTracks; t++) {
+					this.sendOsc('/live/track/stop_listen/output_meter_left', [{ type: 'i', value: t }])
+					this.sendOsc('/live/track/stop_listen/output_meter_right', [{ type: 'i', value: t }])
+				}
+			} catch (e) {}
+
 			this.oscPort.close()
 			delete this.oscPort
 		}
@@ -226,13 +246,17 @@ class AbletonOSCInstance extends InstanceBase {
 	}
 
 	processOscMessage(msg) {
-		const address = msg.address
-		const args = msg.args
+		try {
+			const address = msg.address
+			const args = msg.args
 
-		this.log('debug', `OSC Received: ${address} ${JSON.stringify(args)}`)
-		this.setVariableValues({ last_message: address })
+			// Filter out meter messages from debug log and variable update to prevent flooding
+			if (!address.includes('output_meter')) {
+				this.log('debug', `OSC Received: ${address} ${JSON.stringify(args)}`)
+				this.setVariableValues({ last_message: address })
+			}
 
-		if (address === '/live/clip/get/gain') {
+			if (address === '/live/clip/get/gain') {
 			// args: [track, clip, gain]
 			const track = args[0].value
 			const clip = args[1].value
@@ -324,49 +348,66 @@ class AbletonOSCInstance extends InstanceBase {
 			this.log('info', `Updated presets for ${this.numScenes} scenes`)
 			this.fetchClipInfo()
 		}
+		} catch (e) {
+			this.log('error', `Error processing OSC message: ${e.message}`)
+		}
 	}
 
 	fetchClipInfo() {
-		// Limit to avoid flooding if project is huge
-		const maxTracks = 64
-		const maxScenes = 64
-		
-		const tCount = Math.min(this.numTracks, maxTracks)
-		const sCount = Math.min(this.numScenes, maxScenes)
+		if (this.fetchTimeout) clearTimeout(this.fetchTimeout)
 
-		this.log('info', `Fetching info for ${tCount} tracks and ${sCount} scenes`)
-		
-		for (let t = 0; t < tCount; t++) {
-			// Request Track Name
-			this.sendOsc('/live/track/get/name', [
-				{ type: 'i', value: t }
-			])
+		this.fetchTimeout = setTimeout(async () => {
+			// Limit to avoid flooding if project is huge
+			const maxTracks = 64
+			const maxScenes = 64
+			
+			const tCount = Math.min(this.numTracks, maxTracks)
+			const sCount = Math.min(this.numScenes, maxScenes)
 
-			// Start listening to meters
-			this.sendOsc('/live/track/start_listen/output_meter_left', [
-				{ type: 'i', value: t }
-			])
-			this.sendOsc('/live/track/start_listen/output_meter_right', [
-				{ type: 'i', value: t }
-			])
+			this.log('info', `Fetching info for ${tCount} tracks and ${sCount} scenes`)
+			
+			let msgCount = 0
 
-			// Ensure variable definition exists
-			const varId = `track_meter_${t + 1}`
-			this.checkVariableDefinition(varId, `Track Meter ${t + 1}`)
-
-			for (let s = 0; s < sCount; s++) {
-				// Request Name
-				this.sendOsc('/live/clip/get/name', [
-					{ type: 'i', value: t },
-					{ type: 'i', value: s }
+			for (let t = 0; t < tCount; t++) {
+				// Request Track Name
+				this.sendOsc('/live/track/get/name', [
+					{ type: 'i', value: t }
 				])
-				// Request Color
-				this.sendOsc('/live/clip/get/color', [
-					{ type: 'i', value: t },
-					{ type: 'i', value: s }
+				msgCount++
+
+				// Start listening to meters
+				this.sendOsc('/live/track/start_listen/output_meter_left', [
+					{ type: 'i', value: t }
 				])
+				this.sendOsc('/live/track/start_listen/output_meter_right', [
+					{ type: 'i', value: t }
+				])
+				msgCount += 2
+
+				// Ensure variable definition exists
+				const varId = `track_meter_${t + 1}`
+				this.checkVariableDefinition(varId, `Track Meter ${t + 1}`)
+
+				for (let s = 0; s < sCount; s++) {
+					// Request Name
+					this.sendOsc('/live/clip/get/name', [
+						{ type: 'i', value: t },
+						{ type: 'i', value: s }
+					])
+					// Request Color
+					this.sendOsc('/live/clip/get/color', [
+						{ type: 'i', value: t },
+						{ type: 'i', value: s }
+					])
+					msgCount += 2
+
+					if (msgCount >= 20) {
+						await new Promise(resolve => setTimeout(resolve, 10))
+						msgCount = 0
+					}
+				}
 			}
-		}
+		}, 200)
 	}
 
 	checkVariableDefinition(id, name) {
