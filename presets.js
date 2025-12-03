@@ -41,18 +41,6 @@ module.exports = async function (self) {
 							}
 						],
 						up: []
-					},
-					{
-						down: [
-							{
-								actionId: 'stop_clip',
-								options: {
-									track: t,
-									clip: s
-								}
-							}
-						],
-						up: []
 					}
 				],
 				feedbacks: [

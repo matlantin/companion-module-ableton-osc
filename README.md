@@ -17,9 +17,13 @@ For this module to work, you must install the remote script in Ableton Live:
 1.  Download the latest version of [AbletonOSC](https://github.com/ideoforms/AbletonOSC) (Code > Download ZIP).
 2.  Extract the `AbletonOSC-master` folder.
 3.  Rename the extracted folder to `AbletonOSC`.
-4.  Move this folder into the "MIDI Remote Scripts" directory of your Ableton Live installation:
-    *   **Windows**: `C:\ProgramData\Ableton\Live x.x\Resources\MIDI Remote Scripts\`
-    *   **macOS**: Right-click the Ableton Live application > "Show Package Contents" > `Contents/App-Resources/MIDI Remote Scripts/`
+4. Install it following the instructions on Ableton's Installing third-party remote scripts doc, by copying the AbletonOSC folder to:
+
+    Windows: \Users\[username]\Documents\Ableton\User Library\Remote Scripts
+    macOS: Macintosh HD/Users/[username]/Music/Ableton/User Library/Remote Scripts
+
+    In Preferences > Link / Tempo / MIDI, under the Control Surface dropdown, select the new "AbletonOSC" option. Live should display a message saying "AbletonOSC: Listening for OSC on port 11000"
+
 5.  Launch Ableton Live.
 6.  Go to **Options** > **Preferences** > **Link Tempo MIDI**.
 7.  In the "Control Surface" section, select **AbletonOSC** in one of the dropdown lists.
@@ -41,7 +45,6 @@ The module automatically generates presets to help you get started quickly.
 ### Category: Clips
 A grid of buttons (default 8 tracks x 8 scenes) that allows you to:
 *   **Fire a clip** (Press).
-*   **Stop a clip** (Release or other configured action).
 *   **Display the clip name** in real-time.
 *   **Display the clip color** as the button background.
 
