@@ -204,9 +204,9 @@ class AbletonOSCInstance extends InstanceBase {
 					const remaining = 1.0 - progress
 					newValue = fade.startValue * (remaining * remaining)
 				} else {
-					// Cubic fade in (Ease-In: starts very slow, speeds up)
-					// This gives even more resolution in the low range (0-75%)
-					newValue = fade.startValue * (progress * progress * progress)
+					// Quadratic fade in (Ease-In: starts slow, speeds up)
+					// This gives more resolution in the low range (0-75%)
+					newValue = fade.startValue * (progress * progress)
 				}
 				
 				if (fade.type === 'clip') {
