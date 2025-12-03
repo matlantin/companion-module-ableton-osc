@@ -131,7 +131,7 @@ module.exports = async function (self) {
 							actionId: 'fade_in_track',
 							options: {
 								track: t,
-								duration: 3500
+								duration: 1500
 							}
 						}
 					],
@@ -189,7 +189,7 @@ module.exports = async function (self) {
 								options: {
 									track: t,
 									clip: s,
-									duration: 3500
+									duration: 1500
 								}
 							}
 						],

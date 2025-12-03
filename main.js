@@ -141,8 +141,8 @@ class AbletonOSCInstance extends InstanceBase {
 			}
 		}
 
-		// Interval for updates (e.g. every 20ms for smoother fades)
-		const intervalTime = 20
+		// Interval for updates (e.g. every 10ms for smoother fades)
+		const intervalTime = 10
 		
 		if (fade.interval) clearInterval(fade.interval)
 
