@@ -299,6 +299,66 @@ module.exports = function (self) {
 				])
 			}
 		},
+		fade_track_toggle: {
+			name: 'Fade Track by State (Variable)',
+			options: [
+				{
+					type: 'textinput',
+					label: 'State (True/False)',
+					id: 'state',
+					default: 'false',
+					useVariables: true
+				},
+				{
+					type: 'number',
+					label: 'Track Index',
+					id: 'track',
+					min: 1,
+					max: 1000,
+					default: 1,
+					required: true
+				},
+				{
+					type: 'number',
+					label: 'Duration (ms)',
+					id: 'duration',
+					min: 100,
+					max: 60000,
+					default: 3500,
+					required: true
+				}
+			],
+			callback: async (event) => {
+				const track = event.options.track - 1
+				const duration = event.options.duration
+				
+				// Parse state
+				let state = await self.parseVariablesInString(event.options.state)
+				if (typeof state === 'string') {
+					state = state.toLowerCase().trim()
+				}
+				
+				const isTrue = (state === 'true' || state === '1' || state === 'on')
+				const direction = isTrue ? 'in' : 'out'
+
+				const id = `track_${track}`
+				
+				if (!self.activeFades) self.activeFades = {}
+				
+				self.activeFades[id] = {
+					type: 'track',
+					direction: direction,
+					track,
+					duration,
+					startTime: Date.now(),
+					state: 'init'
+				}
+
+				self.sendOsc('/live/track/get/volume', [
+					{ type: 'i', value: track }
+				])
+			}
+		},
 		refresh_clip_info: {
 			name: 'Refresh Clip Info',
 			options: [
