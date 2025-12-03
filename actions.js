@@ -320,20 +320,29 @@ module.exports = function (self) {
 				},
 				{
 					type: 'number',
-					label: 'Duration In (ms)',
-					id: 'duration_in',
+					label: 'Rise time (ms)',
+					id: 'rise_time',
 					min: 100,
 					max: 60000,
-					default: 2000,
+					default: 750,
 					required: true
 				},
 				{
 					type: 'number',
-					label: 'Duration Out (ms)',
-					id: 'duration_out',
+					label: 'Fall time (ms)',
+					id: 'fall_time',
 					min: 100,
 					max: 60000,
 					default: 3500,
+					required: true
+				},
+				{
+					type: 'number',
+					label: 'On time (ms)',
+					id: 'on_time',
+					min: 0,
+					max: 60000,
+					default: 500,
 					required: true
 				}
 			],
@@ -347,42 +356,31 @@ module.exports = function (self) {
 				}
 				
 				const isTrue = (state === 'true' || state === '1' || state === 'on')
-				const direction = isTrue ? 'in' : 'out'
-				const duration = isTrue ? event.options.duration_in : event.options.duration_out
+				
+				const riseTime = event.options.rise_time
+				const fallTime = event.options.fall_time
+				const onTime = event.options.on_time
 
 				const id = `track_${track}`
 				
-				if (!self.activeFades) self.activeFades = {}
-
-				// Check for existing fade to interrupt
-				const existingFade = self.activeFades[id]
-				let targetVolume = undefined
-
-				if (existingFade) {
-					if (existingFade.interval) {
-						clearInterval(existingFade.interval)
-					}
-					// If we interrupt, we try to preserve the peak volume
-					// If interrupting a Fade Out, startValue was the peak.
-					// If interrupting a Fade In, startValue was the peak.
-					targetVolume = existingFade.startValue
-				}
-				
-				self.activeFades[id] = {
-					type: 'track',
-					subtype: 'toggle',
-					direction: direction,
-					track,
-					duration,
-					startTime: Date.now(),
-					state: 'init',
-					stopClips: false,
-					targetVolume: targetVolume
+				// Clear any pending "On Time" delay
+				if (self.trackDelays && self.trackDelays[id]) {
+					clearTimeout(self.trackDelays[id])
+					delete self.trackDelays[id]
 				}
 
-				self.sendOsc('/live/track/get/volume', [
-					{ type: 'i', value: track }
-				])
+				if (isTrue) {
+					// FADE IN (Immediate)
+					self.setupTrackToggleFade(track, 'in', riseTime)
+				} else {
+					// FADE OUT (Delayed)
+					if (!self.trackDelays) self.trackDelays = {}
+					
+					self.trackDelays[id] = setTimeout(() => {
+						self.setupTrackToggleFade(track, 'out', fallTime)
+						delete self.trackDelays[id]
+					}, onTime)
+				}
 			}
 		},
 		refresh_clip_info: {

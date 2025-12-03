@@ -15,6 +15,7 @@ class AbletonOSCInstance extends InstanceBase {
 		this.trackLevelsLeft = {}
 		this.trackLevelsRight = {}
 		this.trackStoredVolumes = {}
+		this.trackDelays = {}
 		this.variableDefinitions = []
 		this.numTracks = 8
 		this.numScenes = 8
@@ -42,6 +43,12 @@ class AbletonOSCInstance extends InstanceBase {
 			}
 		}
 		this.activeFades = {}
+
+		// Clear all track delays
+		for (const id in this.trackDelays) {
+			clearTimeout(this.trackDelays[id])
+		}
+		this.trackDelays = {}
 
 		if (this.fetchTimeout) {
 			clearTimeout(this.fetchTimeout)
@@ -132,6 +139,40 @@ class AbletonOSCInstance extends InstanceBase {
 		} else {
 			this.updateStatus(InstanceStatus.BadConfig)
 		}
+	}
+
+	setupTrackToggleFade(track, direction, duration) {
+		const id = `track_${track}`
+		
+		if (!this.activeFades) this.activeFades = {}
+
+		// Check for existing fade to interrupt
+		const existingFade = this.activeFades[id]
+		let targetVolume = undefined
+
+		if (existingFade) {
+			if (existingFade.interval) {
+				clearInterval(existingFade.interval)
+			}
+			// If we interrupt, we try to preserve the peak volume
+			targetVolume = existingFade.startValue
+		}
+		
+		this.activeFades[id] = {
+			type: 'track',
+			subtype: 'toggle',
+			direction: direction,
+			track,
+			duration,
+			startTime: Date.now(),
+			state: 'init',
+			stopClips: false,
+			targetVolume: targetVolume
+		}
+
+		this.sendOsc('/live/track/get/volume', [
+			{ type: 'i', value: track }
+		])
 	}
 
 	startFade(id, startValue) {
