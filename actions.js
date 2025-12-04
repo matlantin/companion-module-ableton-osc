@@ -97,6 +97,55 @@ module.exports = function (self) {
 				])
 			}
 		},
+		mute_track: {
+			name: 'Mute Track',
+			options: [
+				{
+					type: 'number',
+					label: 'Track Index',
+					id: 'track',
+					min: 1,
+					max: 1000,
+					default: 1,
+					required: true
+				},
+				{
+					type: 'dropdown',
+					label: 'Mute State',
+					id: 'mute',
+					default: 'toggle',
+					choices: [
+						{ id: 'toggle', label: 'Toggle' },
+						{ id: 'on', label: 'Mute' },
+						{ id: 'off', label: 'Unmute' }
+					]
+				}
+			],
+			callback: async (event) => {
+				const track = event.options.track - 1
+				let mute = event.options.mute
+				
+				if (mute === 'toggle') {
+					// Invert current state
+					// trackMutes is 1-based
+					const current = self.trackMutes[event.options.track]
+					mute = current ? 'off' : 'on'
+				}
+				
+				const val = mute === 'on' ? 1 : 0
+				
+				self.sendOsc('/live/track/set/mute', [
+					{
+						type: 'i',
+						value: track
+					},
+					{
+						type: 'i',
+						value: val
+					}
+				])
+			}
+		},
 		fade_stop_clip: {
 			name: 'Fade Out and Stop Clip',
 			options: [

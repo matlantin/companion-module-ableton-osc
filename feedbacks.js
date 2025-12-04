@@ -41,6 +41,38 @@ module.exports = async function (self) {
 				return {}
 			}
 		},
+		clip_playing: {
+			type: 'boolean',
+			name: 'Clip Playing (Blink)',
+			description: 'Blinks when clip is playing',
+			defaultStyle: {
+				bgcolor: combineRgb(0, 0, 0),
+				color: combineRgb(255, 255, 255)
+			},
+			options: [
+				{
+					type: 'number',
+					label: 'Track Index',
+					id: 'track',
+					default: 1,
+					min: 1
+				},
+				{
+					type: 'number',
+					label: 'Clip Index',
+					id: 'clip',
+					default: 1,
+					min: 1
+				}
+			],
+			callback: (feedback) => {
+				const track = feedback.options.track
+				const clip = feedback.options.clip
+				const isPlaying = self.clipPlaying[`${track}_${clip}`] === true || self.clipPlaying[`${track}_${clip}`] === 1
+				
+				return isPlaying && self.blinkState
+			}
+		},
 		track_meter: {
 			type: 'boolean',
 			name: 'Track Meter Level',
@@ -68,6 +100,28 @@ module.exports = async function (self) {
 				const track = feedback.options.track
 				const level = self.trackLevels[track] || 0
 				return level >= feedback.options.threshold
+			}
+		},
+		track_mute: {
+			type: 'boolean',
+			name: 'Track Mute',
+			description: 'Change color if track is muted',
+			defaultStyle: {
+				bgcolor: combineRgb(255, 0, 0)
+			},
+			options: [
+				{
+					type: 'number',
+					label: 'Track Index',
+					id: 'track',
+					default: 1,
+					min: 1
+				}
+			],
+			callback: (feedback) => {
+				const track = feedback.options.track
+				// Check if muted (true or 1)
+				return self.trackMutes[track] === true || self.trackMutes[track] === 1
 			}
 		},
 		track_meter_visual: {

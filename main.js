@@ -14,12 +14,16 @@ class AbletonOSCInstance extends InstanceBase {
 		this.trackLevels = {}
 		this.trackLevelsLeft = {}
 		this.trackLevelsRight = {}
+		this.trackMutes = {}
+		this.clipPlaying = {}
 		this.trackStoredVolumes = {}
 		this.trackDelays = {}
 		this.variableDefinitions = []
 		this.numTracks = 8
 		this.numScenes = 8
 		this.activeFades = {}
+		this.blinkState = false
+		this.variableIds = new Set()
 	}
 
 	async init(config) {
@@ -32,10 +36,13 @@ class AbletonOSCInstance extends InstanceBase {
 		this.initFeedbacks()
 		this.initVariables()
 		this.initPresets()
+		this.startBlink()
 	}
 
 
 	async destroy() {
+		if (this.blinkInterval) clearInterval(this.blinkInterval)
+
 		// Stop all active fades
 		for (const id in this.activeFades) {
 			if (this.activeFades[id].interval) {
@@ -60,6 +67,8 @@ class AbletonOSCInstance extends InstanceBase {
 				for (let t = 0; t < this.numTracks; t++) {
 					this.sendOsc('/live/track/stop_listen/output_meter_left', [{ type: 'i', value: t }])
 					this.sendOsc('/live/track/stop_listen/output_meter_right', [{ type: 'i', value: t }])
+					this.sendOsc('/live/track/stop_listen/mute', [{ type: 'i', value: t }])
+					this.sendOsc('/live/track/stop_listen/playing_slot_index', [{ type: 'i', value: t }])
 				}
 			} catch (e) {}
 
@@ -424,9 +433,27 @@ class AbletonOSCInstance extends InstanceBase {
 			const track = args[0].value + 1
 			const clip = args[1].value + 1
 			const color = args[2].value
-			
 			this.clipColors[`${track}_${clip}`] = color
 			this.checkFeedbacks('clip_color')
+
+		} else if (address === '/live/track/get/playing_slot_index') {
+			// args: [track, clip_index]
+			const track = args[0].value + 1
+			const playingClipIndex = args[1].value // 0-based index of playing clip, or -1 if none
+			
+			// Update all clips for this track
+			// We iterate through known scenes (or up to numScenes)
+			for (let s = 1; s <= this.numScenes; s++) {
+				const isPlaying = (s - 1) === playingClipIndex
+				const clipId = `${track}_${s}`
+				
+				// Only update if changed to avoid flooding
+				if (this.clipPlaying[clipId] !== isPlaying) {
+					this.clipPlaying[clipId] = isPlaying
+				}
+			}
+			
+			this.checkFeedbacks('clip_playing')
 
 		} else if (address === '/live/track/get/name') {
 			// args: [track, name]
@@ -436,6 +463,14 @@ class AbletonOSCInstance extends InstanceBase {
 			const varId = `track_name_${track}`
 			this.checkVariableDefinition(varId, `Track Name ${track}`)
 			this.setVariableValues({ [varId]: name })
+
+		} else if (address === '/live/track/get/mute') {
+			// args: [track, mute]
+			const track = args[0].value + 1
+			const mute = args[1].value
+			
+			this.trackMutes[track] = mute
+			this.checkFeedbacks('track_mute')
 
 		} else if (address === '/live/track/get/output_meter_left' || address === '/live/track/get/output_meter_right') {
 			// args: [track, level]
@@ -461,7 +496,6 @@ class AbletonOSCInstance extends InstanceBase {
 			
 			const varId = `track_meter_${track}`
 			// We assume variable is defined during init or first pass to save CPU
-			// this.checkVariableDefinition(varId, `Track Meter ${track}`)
 			this.setVariableValues({ [varId]: maxLevel.toFixed(2) })
 			
 			this.checkFeedbacks('track_meter')
@@ -469,11 +503,13 @@ class AbletonOSCInstance extends InstanceBase {
 
 		} else if (address === '/live/song/get/num_tracks') {
 			this.numTracks = args[0].value
+			this.initVariables()
 			this.initPresets()
 			this.log('info', `Updated presets for ${this.numTracks} tracks`)
 			this.fetchClipInfo()
 		} else if (address === '/live/song/get/num_scenes') {
 			this.numScenes = args[0].value
+			this.initVariables()
 			this.initPresets()
 			this.log('info', `Updated presets for ${this.numScenes} scenes`)
 			this.fetchClipInfo()
@@ -504,7 +540,6 @@ class AbletonOSCInstance extends InstanceBase {
 					{ type: 'i', value: t }
 				])
 				msgCount++
-
 				// Start listening to meters
 				this.sendOsc('/live/track/start_listen/output_meter_left', [
 					{ type: 'i', value: t }
@@ -513,6 +548,18 @@ class AbletonOSCInstance extends InstanceBase {
 					{ type: 'i', value: t }
 				])
 				msgCount += 2
+
+				// Start listening to playing slot (much more efficient than listening to each clip)
+				this.sendOsc('/live/track/start_listen/playing_slot_index', [
+					{ type: 'i', value: t }
+				])
+				msgCount++
+
+				// Start listening to mute
+				this.sendOsc('/live/track/start_listen/mute', [
+					{ type: 'i', value: t }
+				])
+				msgCount++
 
 				// Ensure variable definition exists
 				const varId = `track_meter_${t + 1}`
@@ -531,7 +578,7 @@ class AbletonOSCInstance extends InstanceBase {
 					])
 					msgCount += 2
 
-					if (msgCount >= 20) {
+					if (msgCount >= 100) {
 						await new Promise(resolve => setTimeout(resolve, 10))
 						msgCount = 0
 					}
@@ -541,7 +588,8 @@ class AbletonOSCInstance extends InstanceBase {
 	}
 
 	checkVariableDefinition(id, name) {
-		if (!this.variableDefinitions.find(v => v.variableId === id)) {
+		if (!this.variableIds.has(id)) {
+			this.variableIds.add(id)
 			this.variableDefinitions.push({ variableId: id, name: name })
 			this.setVariableDefinitions(this.variableDefinitions)
 		}
@@ -561,6 +609,14 @@ class AbletonOSCInstance extends InstanceBase {
 
 	initPresets() {
 		UpdatePresets(this)
+	}
+
+	startBlink() {
+		if (this.blinkInterval) clearInterval(this.blinkInterval)
+		this.blinkInterval = setInterval(() => {
+			this.blinkState = !this.blinkState
+			this.checkFeedbacks('clip_playing')
+		}, 500)
 	}
 
 	sendOsc(address, args) {

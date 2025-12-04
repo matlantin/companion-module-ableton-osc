@@ -50,6 +50,17 @@ module.exports = async function (self) {
 							track: t,
 							clip: s
 						}
+					},
+					{
+						feedbackId: 'clip_playing',
+						options: {
+							track: t,
+							clip: s
+						},
+						style: {
+							bgcolor: combineRgb(0, 0, 0),
+							color: combineRgb(255, 255, 255)
+						}
 					}
 				]
 			}
@@ -59,7 +70,7 @@ module.exports = async function (self) {
 	for (let t = 1; t <= numTracks; t++) {
 		presets[`stop_track_${t}`] = {
 			type: 'button',
-			category: 'Tracks',
+			category: 'Tracks Stop',
 			name: `Stop Track ${t}`,
 			style: {
 				text: `STOP $(ableton:track_name_${t})`,
@@ -81,6 +92,43 @@ module.exports = async function (self) {
 				}
 			],
 			feedbacks: []
+		}
+
+		presets[`mute_track_${t}`] = {
+			type: 'button',
+			category: 'Tracks Mute',
+			name: `Mute Track ${t}`,
+			style: {
+				text: `$(ableton:track_name_${t})`,
+				size: 'auto',
+				color: combineRgb(255, 255, 255),
+				bgcolor: combineRgb(0, 0, 0)
+			},
+			steps: [
+				{
+					down: [
+						{
+							actionId: 'mute_track',
+							options: {
+								track: t,
+								mute: 'toggle'
+							}
+						}
+					],
+					up: []
+				}
+			],
+			feedbacks: [
+				{
+					feedbackId: 'track_mute',
+					options: {
+						track: t
+					},
+					style: {
+						bgcolor: combineRgb(255, 0, 0)
+					}
+				}
+			]
 		}
 
 		presets[`meter_track_${t}`] = {
