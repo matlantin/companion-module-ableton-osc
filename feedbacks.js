@@ -164,8 +164,7 @@ module.exports = async function (self) {
 				
 				if (pngBuffer) {
 					return {
-						png64: pngBuffer.toString('base64'),
-						bgcolor: combineRgb(0, 0, 0) // Ensure black background
+						png64: pngBuffer.toString('base64')
 					}
 				}
 				return {}

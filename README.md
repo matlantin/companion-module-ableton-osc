@@ -35,44 +35,78 @@ For this module to work, you must install the remote script in Ableton Live:
     *   **Receive Port (Listen)**: Companion listening port for feedback (Default: `11001`).
 3.  Save. The status should change to "OK".
 
-## Using Presets
+## ⚠️ IMPORTANT: First Step
+
+**Before using any buttons, you MUST run the "Scan Project" action.**
+
+1.  Go to the **Presets** tab.
+2.  Open the **Utility** category.
+3.  Drag the **Scan Project** button (Yellow background) to your surface.
+4.  Press the button.
+
+This will fetch the number of tracks, scenes, clip names, and colors from your current Ableton project. Without this step, buttons may not work or display correct information.
+
+## Presets Inventory
 
 The module automatically generates presets to help you get started quickly.
+
+### Category: Utility
+*   **Scan Project**: **(Essential)** Scans the current Ableton project to update track/scene counts, names, and colors.
 
 ### Category: Clips
 A grid of buttons (default 8 tracks x 8 scenes) that allows you to:
 *   **Fire a clip** (Press).
 *   **Display the clip name** as the button name.
 *   **Display the clip color** as the button background.
+*   **Blink** when the clip is playing.
 
 ### Category: Tracks
 Buttons to control tracks:
+*   **Mute Track**: Toggles track mute.
+    *   Displays track name.
+    *   **Red Background** when muted.
+    *   **Visual Meter** (Right bar) showing real-time audio level.
+
+### Category: Tracks Stop
 *   **Stop Track**: Stops playing all clips on a specific track. Displays the track name.
 
 ### Category: Meters
 Buttons displaying real-time track audio levels:
 *   **Meter Track**: Displays the track name and a dynamic bargraph.
-*   **Display Options** (via the Feedback tab):
-    *   *Right Bar (Stereo)*: Two thin bars (L/R) on the right edge.
-    *   *Left Bar (Stereo)*: Two thin bars (L/R) on the left edge.
-    *   *Full Button (Stereo)*: Meter occupying the entire button.
 
-## Available Actions
+## Features & Feedbacks
 
+### Actions
 *   **Fire Clip**: Triggers a clip (Track, Scene).
 *   **Stop Clip**: Stops the current clip on a track.
 *   **Stop Track**: Stops all clips on a track.
-*   **Refresh Clip Info**: Forces an update of names and colors.
+*   **Mute Track**: Toggles, Mutes, or Unmutes a track.
+*   **Fade Out and Stop Clip**: Fades out volume and stops the clip.
+*   **Fade In and Fire Clip**: Fades in volume and fires the clip.
+*   **Fade Out and Stop Track**: Fades out track volume.
+*   **Fade In Track Volume**: Fades in track volume.
+*   **Fade Track by State**: Advanced fading based on a variable state.
+*   **Refresh Clip Info**: Forces an update of names and colors for a specific clip.
+*   **Scan Project**: Updates the entire module state from Ableton.
+
+### Feedbacks
+*   **Clip Color**: Changes button background to match Ableton clip color.
+*   **Clip Playing (Blink)**: Blinks the button when the clip is playing.
+*   **Track Meter Level**: Changes color if audio level exceeds a threshold.
+*   **Track Mute**: Changes background color (Red) if track is muted.
+*   **Track Meter Visual**: Displays a real-time PNG bargraph on the button (Stereo Left, Stereo Right, or Full).
 
 ## Variables
 
 *   `$(ableton:clip_name_TRACK_CLIP)`: Clip name (e.g., `$(ableton:clip_name_1_1)`).
 *   `$(ableton:track_name_TRACK)`: Track name.
 *   `$(ableton:track_meter_TRACK)`: Current track audio level (0.0 to 1.0).
+*   `$(ableton:track_mute_TRACK)`: Track mute state (1 or 0).
 
 ## Troubleshooting
 
 *   **No visual feedback (Meters/Names)?**
+    *   Did you run **Scan Project**?
     *   Check that the "Receive Port" in Companion matches the output port configured in AbletonOSC (usually 11001).
     *   Check that no firewall is blocking UDP ports 11000 and 11001.
 *   **Module disconnects/reconnects?**

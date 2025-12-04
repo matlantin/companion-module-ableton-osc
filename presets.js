@@ -96,7 +96,7 @@ module.exports = async function (self) {
 
 		presets[`mute_track_${t}`] = {
 			type: 'button',
-			category: 'Tracks Mute',
+			category: 'Tracks',
 			name: `Mute Track ${t}`,
 			style: {
 				text: `$(ableton:track_name_${t})`,
@@ -126,6 +126,13 @@ module.exports = async function (self) {
 					},
 					style: {
 						bgcolor: combineRgb(255, 0, 0)
+					}
+				},
+				{
+					feedbackId: 'track_meter_visual',
+					options: {
+						track: t,
+						position: 'stereoRight'
 					}
 				}
 			]
@@ -292,6 +299,31 @@ module.exports = async function (self) {
 			}
 		}
 	}
-	
+
+	// Utility Presets
+	presets['scan_project'] = {
+		type: 'button',
+		category: 'Utility',
+		name: 'Scan Project',
+		style: {
+			text: 'Scan\nProject',
+			size: '14',
+			color: combineRgb(0, 0, 0),
+			bgcolor: combineRgb(255, 192, 255)
+		},
+		steps: [
+			{
+				down: [
+					{
+						actionId: 'scan_project',
+						options: {}
+					}
+				],
+				up: []
+			}
+		],
+		feedbacks: []
+	}
+
 	self.setPresetDefinitions(presets)
 }
