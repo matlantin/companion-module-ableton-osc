@@ -146,6 +146,81 @@ module.exports = function (self) {
 				])
 			}
 		},
+		device_toggle: {
+			name: 'Device (Plugin) Toggle',
+			options: [
+				{
+					type: 'number',
+					label: 'Track Index',
+					id: 'track',
+					min: 1,
+					max: 1000,
+					default: 1,
+					required: true
+				},
+				{
+					type: 'number',
+					label: 'Device Index',
+					id: 'device',
+					min: 1,
+					max: 100,
+					default: 1,
+					required: true
+				},
+				{
+					type: 'number',
+					label: 'Parameter Index (Default 1 = On/Off)',
+					id: 'parameter',
+					min: 1,
+					max: 1000,
+					default: 1,
+					required: true
+				},
+				{
+					type: 'dropdown',
+					label: 'State',
+					id: 'state',
+					default: 'toggle',
+					choices: [
+						{ id: 'toggle', label: 'Toggle' },
+						{ id: 'on', label: 'On' },
+						{ id: 'off', label: 'Off' }
+					]
+				}
+			],
+			callback: async (event) => {
+				const track = event.options.track - 1
+				const device = event.options.device - 1
+				const parameter = event.options.parameter - 1
+				let state = event.options.state
+				
+				// Ensure we are listening to this parameter (Fix for "Toggle works only once")
+				// We send this every time to be safe, it's cheap.
+				self.sendOsc('/live/device/start_listen/parameter/value', [
+					{ type: 'i', value: track },
+					{ type: 'i', value: device },
+					{ type: 'i', value: parameter }
+				])
+
+				if (state === 'toggle') {
+					const current = self.deviceParameters[`${event.options.track}_${event.options.device}_${event.options.parameter}`]
+					// If current is undefined, assume it's on (1) so we turn it off, or vice versa. 
+					// Safer to assume 0 if unknown? Or maybe we can't toggle if unknown.
+					// Let's assume 0 if undefined.
+					const currentVal = current !== undefined ? current : 0
+					state = currentVal > 0.5 ? 'off' : 'on'
+				}
+				
+				const val = state === 'on' ? 1.0 : 0.0
+				
+				self.sendOsc('/live/device/set/parameter/value', [
+					{ type: 'i', value: track },
+					{ type: 'i', value: device },
+					{ type: 'i', value: parameter },
+					{ type: 'f', value: val }
+				])
+			}
+		},
 		fade_stop_clip: {
 			name: 'Fade Out and Stop Clip',
 			options: [

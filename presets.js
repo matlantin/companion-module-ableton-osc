@@ -164,6 +164,57 @@ module.exports = async function (self) {
 				}
 			]
 		}
+
+		// Device Presets
+		if (self.deviceNames && self.deviceNames[t]) {
+			const devices = self.deviceNames[t]
+			for (let d = 0; d < devices.length; d++) {
+				const deviceName = devices[d]
+				const deviceIndex = d + 1
+				
+				presets[`device_${t}_${deviceIndex}`] = {
+					type: 'button',
+					category: 'Devices',
+					name: `Track ${t} Device ${deviceIndex}`,
+					style: {
+						text: `${deviceName}\\n$(ableton:track_name_${t})`,
+						size: 'auto',
+						color: combineRgb(255, 255, 255),
+						bgcolor: combineRgb(0, 0, 0)
+					},
+					steps: [
+						{
+							down: [
+								{
+									actionId: 'device_toggle',
+									options: {
+										track: t,
+										device: deviceIndex,
+										parameter: 1, // Default to On/Off
+										state: 'toggle'
+									}
+								}
+							],
+							up: []
+						}
+					],
+					feedbacks: [
+						{
+							feedbackId: 'device_active',
+							options: {
+								track: t,
+								device: deviceIndex,
+								parameter: 1
+							},
+							style: {
+								bgcolor: combineRgb(0, 255, 0),
+								color: combineRgb(0, 0, 0)
+							}
+						}
+					]
+				}
+			}
+		}
 	}
 
 	// Fades Category

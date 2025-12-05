@@ -124,6 +124,45 @@ module.exports = async function (self) {
 				return self.trackMutes[track] === true || self.trackMutes[track] === 1
 			}
 		},
+		device_active: {
+			type: 'boolean',
+			name: 'Device (Plugin) Active',
+			description: 'Change color if device parameter is active ( > 0.5)',
+			defaultStyle: {
+				bgcolor: combineRgb(0, 255, 0),
+				color: combineRgb(0, 0, 0)
+			},
+			options: [
+				{
+					type: 'number',
+					label: 'Track Index',
+					id: 'track',
+					default: 1,
+					min: 1
+				},
+				{
+					type: 'number',
+					label: 'Device Index',
+					id: 'device',
+					default: 1,
+					min: 1
+				},
+				{
+					type: 'number',
+					label: 'Parameter Index (Default 1 = On/Off)',
+					id: 'parameter',
+					default: 1,
+					min: 1
+				}
+			],
+			callback: (feedback) => {
+				const track = feedback.options.track
+				const device = feedback.options.device
+				const parameter = feedback.options.parameter
+				const value = self.deviceParameters[`${track}_${device}_${parameter}`]
+				return value > 0.5
+			}
+		},
 		track_meter_visual: {
 			type: 'advanced',
 			name: 'Track Meter Visual',

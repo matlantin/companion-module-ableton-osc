@@ -15,6 +15,8 @@ class AbletonOSCInstance extends InstanceBase {
 		this.trackLevelsLeft = {}
 		this.trackLevelsRight = {}
 		this.trackMutes = {}
+		this.deviceParameters = {}
+		this.deviceNames = {}
 		this.clipPlaying = {}
 		this.trackStoredVolumes = {}
 		this.trackDelays = {}
@@ -24,6 +26,7 @@ class AbletonOSCInstance extends InstanceBase {
 		this.activeFades = {}
 		this.blinkState = false
 		this.variableIds = new Set()
+		this.activeParameterListeners = new Set()
 	}
 
 	async init(config) {
@@ -133,6 +136,16 @@ class AbletonOSCInstance extends InstanceBase {
 			this.oscPort.on("ready", () => {
 				this.updateStatus(InstanceStatus.Ok)
 				this.log('info', 'OSC Ready')
+				
+				// Re-send subscriptions if any
+				for (const key of this.activeParameterListeners) {
+					const [track, device, parameter] = key.split('_').map(Number)
+					this.sendOsc('/live/device/start_listen/parameter/value', [
+						{ type: 'i', value: track },
+						{ type: 'i', value: device },
+						{ type: 'i', value: parameter }
+					])
+				}
 			})
 
 			this.oscPort.on("error", (err) => {
@@ -472,6 +485,16 @@ class AbletonOSCInstance extends InstanceBase {
 			this.trackMutes[track] = mute
 			this.checkFeedbacks('track_mute')
 
+		} else if (address === '/live/device/get/parameter/value') {
+			// args: [track, device, param, value]
+			const track = args[0].value + 1
+			const device = args[1].value + 1
+			const param = args[2].value + 1
+			const value = args[3].value
+			
+			this.deviceParameters[`${track}_${device}_${param}`] = value
+			this.checkFeedbacks('device_active')
+
 		} else if (address === '/live/track/get/output_meter_left' || address === '/live/track/get/output_meter_right') {
 			// args: [track, level]
 			const track = args[0].value + 1
@@ -513,6 +536,18 @@ class AbletonOSCInstance extends InstanceBase {
 			this.initPresets()
 			this.log('info', `Updated presets for ${this.numScenes} scenes`)
 			this.fetchClipInfo()
+
+		} else if (address === '/live/track/get/devices/name') {
+			// args: [track_id, name1, name2, ...]
+			const track = args[0].value + 1
+			const names = []
+			for (let i = 1; i < args.length; i++) {
+				names.push(args[i].value)
+			}
+			this.deviceNames[track] = names
+			
+			// Update presets to include these devices
+			this.initPresets()
 		}
 		} catch (e) {
 			this.log('error', `Error processing OSC message: ${e.message}`)
@@ -540,6 +575,13 @@ class AbletonOSCInstance extends InstanceBase {
 					{ type: 'i', value: t }
 				])
 				msgCount++
+
+				// Request Device Names
+				this.sendOsc('/live/track/get/devices/name', [
+					{ type: 'i', value: t }
+				])
+				msgCount++
+
 				// Start listening to meters
 				this.sendOsc('/live/track/start_listen/output_meter_left', [
 					{ type: 'i', value: t }
@@ -560,6 +602,17 @@ class AbletonOSCInstance extends InstanceBase {
 					{ type: 'i', value: t }
 				])
 				msgCount++
+
+				// Start listening to device parameter 0 (Device On/Off) for first 5 devices
+				const maxDevices = 5
+				for (let d = 0; d < maxDevices; d++) {
+					this.sendOsc('/live/device/start_listen/parameter/value', [
+						{ type: 'i', value: t },
+						{ type: 'i', value: d },
+						{ type: 'i', value: 0 } // Parameter 0 is usually Device On/Off
+					])
+					msgCount++
+				}
 
 				// Ensure variable definition exists
 				const varId = `track_meter_${t + 1}`
@@ -609,6 +662,36 @@ class AbletonOSCInstance extends InstanceBase {
 
 	initPresets() {
 		UpdatePresets(this)
+	}
+
+	subscribe(feedback) {
+		if (feedback.type === 'device_active') {
+			const track = (feedback.options.track || 1) - 1
+			const device = (feedback.options.device || 1) - 1
+			const parameter = (feedback.options.parameter || 1) - 1
+			
+			const key = `${track}_${device}_${parameter}`
+			
+			this.log('debug', `Subscribing to device parameter: ${key}`)
+
+			// We could count subscribers, but for now just ensure we listen
+			if (!this.activeParameterListeners.has(key)) {
+				this.activeParameterListeners.add(key)
+				
+				// Only send if OSC is ready
+				if (this.oscPort) {
+					this.sendOsc('/live/device/start_listen/parameter/value', [
+						{ type: 'i', value: track },
+						{ type: 'i', value: device },
+						{ type: 'i', value: parameter }
+					])
+				}
+			}
+		}
+	}
+
+	unsubscribe(feedback) {
+		// Optional: Implement reference counting to stop listening when no feedbacks use this parameter
 	}
 
 	startBlink() {
