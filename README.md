@@ -4,7 +4,7 @@ This module allows you to control Ableton Live via OSC using the [AbletonOSC](ht
 
 It offers advanced visual feedback, including clip names, colors, and real-time audio meters directly on your Stream Deck buttons.
 
-My main usage of Ableton Live in a broadcast workflow is to play out audio clips, automate track fades and other events based on camera tally states, and set paramaters on plug-ins to adjust audio effects live.
+My main usage of Ableton Live in a broadcast workflow is to play out audio clips, automate track fades and other events based on camera tally states, and set parameters on plug-ins to adjust audio effects live.
 
 If you need to control Ableton Live as a music producer, [**AbleSet**](https://ableset.app/) and its [**Companion module**](https://github.com/matlantin/companion-module-ableset) might be a better fit.
 
